@@ -33,6 +33,7 @@ public sealed class PortManager : IPortManager
     {
         lock (_lock)
         {
+            // Check if this exact device path is already on a port
             var existingPort = _ports.FirstOrDefault(
                 p => p.AssignedDevicePath != null &&
                      p.AssignedDevicePath.Equals(device.DeviceInstancePath, StringComparison.OrdinalIgnoreCase));
@@ -46,6 +47,40 @@ public sealed class PortManager : IPortManager
                 return;
             }
 
+            // Dedup: check if same VID/PID is already connected on another port
+            // This prevents clones (which may enumerate multiple USB interfaces) from
+            // taking two ports for the same physical device.
+            var vidPid = $"{device.Vid}:{device.Pid}";
+            var alreadyConnected = _ports.FirstOrDefault(
+                p => p.State == PortState.Connected &&
+                     p.Controller != null &&
+                     p.Controller.Vid.Equals(device.Vid, StringComparison.OrdinalIgnoreCase) &&
+                     p.Controller.Pid.Equals(device.Pid, StringComparison.OrdinalIgnoreCase));
+
+            if (alreadyConnected != null)
+            {
+                _logger.LogDebug("Duplicado ignorado: {VidPid} ya está en Puerto {Port}.",
+                    vidPid, alreadyConnected.PortNumber);
+                return;
+            }
+
+            // Also check if VID/PID is assigned (remembered) but not connected
+            var assignedSameVidPid = _ports.FirstOrDefault(
+                p => p.State == PortState.Assigned &&
+                     p.AssignedDevicePath != null &&
+                     ExtractVidPid(p.AssignedDevicePath) == ExtractVidPid(device.DeviceInstancePath));
+
+            if (assignedSameVidPid != null)
+            {
+                assignedSameVidPid.State = PortState.Connected;
+                assignedSameVidPid.AssignedDevicePath = device.DeviceInstancePath;
+                assignedSameVidPid.Controller = device;
+                _logger.LogInformation("Mando VID/PID reconocido en Puerto {Port}.", assignedSameVidPid.PortNumber);
+                PortStateChanged?.Invoke(assignedSameVidPid.PortNumber);
+                return;
+            }
+
+            // Assign to empty port
             var emptyPort = _ports.FirstOrDefault(p => p.State == PortState.Empty);
             if (emptyPort != null)
             {
@@ -95,11 +130,9 @@ public sealed class PortManager : IPortManager
         lock (_lock)
         {
             var port = _ports.FirstOrDefault(p => p.PortNumber == portNumber);
-            if (port == null) return;
+            if (port == null || port.State == PortState.Empty) return;
 
-            var wasConnected = port.State == PortState.Connected;
-            var device = port.Controller;
-
+            // Simply clear the slot — do NOT re-assign the device anywhere
             port.State = PortState.Empty;
             port.AssignedDevicePath = null;
             port.Controller = null;
@@ -108,11 +141,6 @@ public sealed class PortManager : IPortManager
             _logger.LogInformation("Puerto {Port} olvidado.", portNumber);
             PortStateChanged?.Invoke(portNumber);
             SaveState();
-
-            if (wasConnected && device != null)
-            {
-                OnControllerConnected(device);
-            }
         }
     }
 

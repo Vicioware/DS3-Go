@@ -1,7 +1,11 @@
 <UserControl x:Class="DS3Go.Views.RemappingView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:models="clr-namespace:DS3Go.Models">
+             xmlns:converters="clr-namespace:DS3Go.Converters">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
 
     <Grid Margin="16,8">
         <Grid.RowDefinitions>
@@ -23,7 +27,7 @@
 
         <TextBlock Grid.Row="1" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
                    Margin="0,0,0,10" TextWrapping="Wrap">
-            Asigna una acción diferente a cada botón físico. Requiere ViGEmBus para aplicar en juegos.
+            Haz clic en un botón y luego presiónalo en el mando para asignar la nueva acción.
         </TextBlock>
 
         <!-- Mapping list -->
@@ -42,16 +46,21 @@
                                             <Trigger Property="IsMouseOver" Value="True">
                                                 <Setter Property="Background" Value="#16162A"/>
                                             </Trigger>
+                                            <DataTrigger Binding="{Binding IsWaiting}" Value="True">
+                                                <Setter Property="Background" Value="#1A1830"/>
+                                            </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </Border.Style>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="130"/>
+                                        <ColumnDefinition Width="120"/>
                                         <ColumnDefinition Width="Auto"/>
                                         <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
                                     </Grid.ColumnDefinitions>
 
+                                    <!-- Physical button name -->
                                     <TextBlock Grid.Column="0" Text="{Binding PhysicalButtonName}"
                                                VerticalAlignment="Center" FontSize="12"
                                                Foreground="{StaticResource TextPrimaryBrush}"/>
@@ -60,10 +69,45 @@
                                                VerticalAlignment="Center" FontSize="13"
                                                Foreground="{StaticResource TextSecondaryBrush}"/>
 
-                                    <ComboBox Grid.Column="2" Width="150"
-                                              ItemsSource="{Binding AvailableButtons}"
-                                              SelectedItem="{Binding VirtualButton, Mode=TwoWay}"
-                                              VerticalAlignment="Center"/>
+                                    <!-- Target: clickable area to start listening -->
+                                    <Button Grid.Column="2" HorizontalAlignment="Left"
+                                            Command="{Binding DataContext.StartListeningCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}">
+                                        <Button.Style>
+                                            <Style TargetType="Button" BasedOn="{StaticResource IconButton}">
+                                                <Setter Property="Padding" Value="10,4"/>
+                                                <Setter Property="MinWidth" Value="120"/>
+                                            </Style>
+                                        </Button.Style>
+                                        <TextBlock VerticalAlignment="Center" FontSize="12">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding VirtualButtonName}"/>
+                                                    <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                                                    <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsWaiting}" Value="True">
+                                                            <Setter Property="Text" Value="Presiona un botón..."/>
+                                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                                            <Setter Property="FontStyle" Value="Italic"/>
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsIdentity}" Value="False">
+                                                            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </Button>
+
+                                    <!-- Reset single mapping -->
+                                    <Button Grid.Column="3" Content="↺" FontSize="14"
+                                            ToolTip="Restaurar este botón"
+                                            Style="{StaticResource IconButton}" Padding="6,2"
+                                            Visibility="{Binding IsIdentity, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"
+                                            Command="{Binding DataContext.ResetSingleMappingCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                            CommandParameter="{Binding}"/>
                                 </Grid>
                             </Border>
                         </DataTemplate>
@@ -72,10 +116,17 @@
             </ScrollViewer>
         </Border>
 
-        <!-- Reset button -->
-        <Button Grid.Row="3" Content="Restaurar valores por defecto" Margin="0,10,0,0"
-                Style="{StaticResource DangerButton}"
-                HorizontalAlignment="Left" Padding="14,6"
-                Command="{Binding ResetMappingsCommand}"/>
+        <!-- Bottom bar -->
+        <DockPanel Grid.Row="3" Margin="0,10,0,0">
+            <Button DockPanel.Dock="Left" Content="Restaurar todos"
+                    Style="{StaticResource DangerButton}" Padding="14,6"
+                    Command="{Binding ResetMappingsCommand}"/>
+
+            <Button DockPanel.Dock="Right" Content="Cancelar captura"
+                    HorizontalAlignment="Right"
+                    Style="{StaticResource DarkButton}" Padding="14,6"
+                    Visibility="{Binding IsListening, Converter={StaticResource BoolToVis}}"
+                    Command="{Binding CancelListeningCommand}"/>
+        </DockPanel>
     </Grid>
 </UserControl>

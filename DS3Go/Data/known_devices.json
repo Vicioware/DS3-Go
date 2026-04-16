@@ -10,72 +10,72 @@
         {
             "vid": "045E",
             "pid": "028E",
-            "manufacturer": "Clon (Identidad Xbox 360)",
-            "model": "Clon PS3 con firmware Xbox 360",
+            "manufacturer": "Clon",
+            "model": "XInput",
             "type": "known_clone",
-            "notes": "VID 045E pertenece a Microsoft. Clones PS3 baratos usan esta identidad para compatibilidad XInput."
+            "notes": "VID 045E = Microsoft. Clones PS3 con firmware Xbox 360 para compatibilidad XInput."
         },
         {
             "vid": "2563",
             "pid": "0575",
             "manufacturer": "ShanWan",
-            "model": "PS3 Controller Clone",
+            "model": "Clon DS3",
             "type": "known_clone"
         },
         {
             "vid": "0810",
             "pid": "0001",
             "manufacturer": "Gasia",
-            "model": "PS3 Controller Clone",
+            "model": "Clon DS3",
             "type": "known_clone"
         },
         {
             "vid": "0810",
             "pid": "0003",
             "manufacturer": "Gasia",
-            "model": "PS3 Controller Clone v2",
+            "model": "Clon DS3 v2",
             "type": "known_clone"
         },
         {
             "vid": "0925",
             "pid": "0005",
             "manufacturer": "ShanWan",
-            "model": "PS3 Controller Clone v2",
+            "model": "Clon DS3 v2",
             "type": "known_clone"
         },
         {
             "vid": "0925",
             "pid": "8866",
             "manufacturer": "ShanWan",
-            "model": "PS3 Controller Clone v3",
+            "model": "Clon DS3 v3",
             "type": "known_clone"
         },
         {
             "vid": "0925",
             "pid": "8818",
             "manufacturer": "Batou",
-            "model": "PS3 Controller Clone",
+            "model": "Clon DS3",
             "type": "known_clone"
         },
         {
             "vid": "0E6F",
             "pid": "1314",
             "manufacturer": "Afterglow",
-            "model": "PS3 Controller Clone",
+            "model": "Clon DS3",
             "type": "known_clone"
         },
         {
             "vid": "2563",
             "pid": "0523",
             "manufacturer": "Panhai",
-            "model": "PS3 Controller Clone",
+            "model": "Clon DS3",
             "type": "known_clone"
         },
         {
             "vid": "20BC",
             "pid": "5500",
-            "manufacturer": "Generic",
-            "model": "HID PS3 Controller Clone",
+            "manufacturer": "Genérico",
+            "model": "Clon HID",
             "type": "known_clone"
         }
     ]

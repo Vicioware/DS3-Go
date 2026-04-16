@@ -20,6 +20,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ILogger<MainViewModel> _logger;
     private readonly Dispatcher _dispatcher;
 
+    // Track last input state to detect rising edges for remapping capture
+    private readonly Dictionary<DS3Button, bool> _prevButtonState = new();
+
     public ObservableCollection<PortViewModel> Ports { get; } = new();
 
     [ObservableProperty]
@@ -57,6 +60,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         _inputTester = new InputTesterViewModel();
         _remapping = new RemappingViewModel(remappingEngine);
+
+        foreach (DS3Button btn in Enum.GetValues<DS3Button>())
+            _prevButtonState[btn] = false;
 
         InitializePorts();
         SubscribeToEvents();
@@ -100,7 +106,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _deviceDetector.Initialize(windowHandle);
         _inputReader.StartReading();
-        StatusText = "Monitoreando dispositivos USB...";
+        StatusText = "Esperando mandos...";
     }
 
     private void OnControllerConnected(ControllerDevice device)
@@ -139,6 +145,29 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (SelectedPort == null || !rawInput.IsConnected) return;
         if (xInputIndex != SelectedPort.PortNumber - 1) return;
 
+        // Check for button press for remapping capture
+        if (Remapping.IsListening)
+        {
+            foreach (DS3Button btn in Enum.GetValues<DS3Button>())
+            {
+                bool pressed = rawInput.IsButtonPressed(btn);
+                bool wasPrev = _prevButtonState.GetValueOrDefault(btn, false);
+
+                if (pressed && !wasPrev)
+                {
+                    _dispatcher.BeginInvoke(() =>
+                    {
+                        Remapping.OnButtonPressedWhileListening(btn);
+                    });
+                    break;
+                }
+            }
+        }
+
+        // Update previous state
+        foreach (DS3Button btn in Enum.GetValues<DS3Button>())
+            _prevButtonState[btn] = rawInput.IsButtonPressed(btn);
+
         var remapped = _remappingEngine.ApplyRemapping(SelectedPort.PortNumber, rawInput);
 
         _dispatcher.BeginInvoke(() =>
@@ -170,15 +199,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!_virtualController.IsAvailable) return;
         _virtualController.CreateVirtualController(portNumber);
-    }
-
-    [RelayCommand]
-    private void SwapPorts(object? parameter)
-    {
-        if (parameter is int[] ports && ports.Length == 2)
-        {
-            _portManager.SwapPorts(ports[0], ports[1]);
-        }
     }
 
     [RelayCommand]

@@ -13,8 +13,13 @@ public partial class RemappingViewModel : ObservableObject
     [ObservableProperty]
     private int _portNumber = 1;
 
+    [ObservableProperty]
+    private ButtonMappingEntry? _listeningEntry;
+
+    [ObservableProperty]
+    private bool _isListening;
+
     public ObservableCollection<ButtonMappingEntry> Entries { get; } = new();
-    public IReadOnlyList<DS3Button> AvailableButtons { get; } = Enum.GetValues<DS3Button>().ToList();
 
     public RemappingViewModel(IRemappingEngine engine)
     {
@@ -24,9 +29,6 @@ public partial class RemappingViewModel : ObservableObject
 
     public void RefreshMappings()
     {
-        foreach (var entry in Entries)
-            entry.MappingChanged -= OnMappingChanged;
-
         Entries.Clear();
         var mapping = _engine.GetMapping(PortNumber);
 
@@ -37,16 +39,53 @@ public partial class RemappingViewModel : ObservableObject
             {
                 PhysicalButton = btn,
                 VirtualButton = target,
-                AvailableButtons = AvailableButtons
+                IsIdentity = btn == target
             };
-            entry.MappingChanged += OnMappingChanged;
             Entries.Add(entry);
         }
     }
 
-    private void OnMappingChanged(DS3Button physical, DS3Button virtual_)
+    /// <summary>
+    /// Called from UI when user clicks a row to start listening for a button press.
+    /// </summary>
+    [RelayCommand]
+    private void StartListening(ButtonMappingEntry entry)
     {
-        _engine.SetMapping(PortNumber, physical, virtual_);
+        // Cancel previous listening
+        if (ListeningEntry != null)
+            ListeningEntry.IsWaiting = false;
+
+        ListeningEntry = entry;
+        entry.IsWaiting = true;
+        IsListening = true;
+    }
+
+    [RelayCommand]
+    private void CancelListening()
+    {
+        if (ListeningEntry != null)
+            ListeningEntry.IsWaiting = false;
+
+        ListeningEntry = null;
+        IsListening = false;
+    }
+
+    /// <summary>
+    /// Called by MainViewModel when a button press is detected while listening.
+    /// </summary>
+    public void OnButtonPressedWhileListening(DS3Button pressedButton)
+    {
+        if (ListeningEntry == null) return;
+
+        var physical = ListeningEntry.PhysicalButton;
+        _engine.SetMapping(PortNumber, physical, pressedButton);
+
+        ListeningEntry.VirtualButton = pressedButton;
+        ListeningEntry.IsIdentity = physical == pressedButton;
+        ListeningEntry.IsWaiting = false;
+
+        ListeningEntry = null;
+        IsListening = false;
     }
 
     [RelayCommand]
@@ -54,6 +93,14 @@ public partial class RemappingViewModel : ObservableObject
     {
         _engine.ResetMapping(PortNumber);
         RefreshMappings();
+    }
+
+    [RelayCommand]
+    private void ResetSingleMapping(ButtonMappingEntry entry)
+    {
+        _engine.SetMapping(PortNumber, entry.PhysicalButton, entry.PhysicalButton);
+        entry.VirtualButton = entry.PhysicalButton;
+        entry.IsIdentity = true;
     }
 }
 
@@ -64,14 +111,17 @@ public partial class ButtonMappingEntry : ObservableObject
     [ObservableProperty]
     private DS3Button _virtualButton;
 
-    public IReadOnlyList<DS3Button> AvailableButtons { get; set; } = Array.Empty<DS3Button>();
+    [ObservableProperty]
+    private bool _isWaiting;
 
-    public event Action<DS3Button, DS3Button>? MappingChanged;
+    [ObservableProperty]
+    private bool _isIdentity = true;
+
+    public string PhysicalButtonName => PhysicalButton.ToString();
+    public string VirtualButtonName => VirtualButton.ToString();
 
     partial void OnVirtualButtonChanged(DS3Button value)
     {
-        MappingChanged?.Invoke(PhysicalButton, value);
+        OnPropertyChanged(nameof(VirtualButtonName));
     }
-
-    public string PhysicalButtonName => PhysicalButton.ToString();
 }

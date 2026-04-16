@@ -85,16 +85,9 @@
                                 CommandParameter="{Binding SelectedPort.PortNumber}"/>
                         <!-- Move Down -->
                         <Button Style="{StaticResource IconButton}" ToolTip="Mover abajo (intercambiar con puerto siguiente)"
-                                Content="▼" FontSize="10" Margin="0,0,8,0"
+                                Content="▼" FontSize="10"
                                 Command="{Binding MovePortDownCommand}"
                                 CommandParameter="{Binding SelectedPort.PortNumber}"/>
-                        <!-- Forget -->
-                        <Button Style="{StaticResource DangerButton}" Padding="10,4"
-                                ToolTip="Olvidar este mando y liberar el puerto"
-                                Content="Olvidar mando" FontSize="11"
-                                Command="{Binding ForgetDeviceCommand}"
-                                CommandParameter="{Binding SelectedPort.PortNumber}"
-                                IsEnabled="{Binding SelectedPort.HasDevice}"/>
                     </StackPanel>
                 </DockPanel>
             </Border>
