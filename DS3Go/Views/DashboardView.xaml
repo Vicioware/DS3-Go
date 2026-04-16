@@ -73,7 +73,7 @@
                         <Run Text="{Binding SelectedPort.PortNumber, Mode=OneWay, FallbackValue=-}"
                              FontWeight="SemiBold" Foreground="{StaticResource TextPrimaryBrush}"/>
                         <Run Text="  "/>
-                        <Run Text="{Binding SelectedPort.DeviceName, Mode=OneWay, FallbackValue=}"
+                        <Run Text="{Binding SelectedPort.DeviceName, Mode=OneWay, FallbackValue=''}"
                              Foreground="{StaticResource TextSecondaryBrush}"/>
                     </TextBlock>
 
