@@ -1,0 +1,11 @@
+using System.Windows.Controls;
+
+namespace DS3Go.Views;
+
+public partial class InputTesterView : UserControl
+{
+    public InputTesterView()
+    {
+        InitializeComponent();
+    }
+}

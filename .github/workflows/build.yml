@@ -1,0 +1,28 @@
+name: Compilar DS3 Go para Windows
+
+on:
+  push:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Descargar el código
+      uses: actions/checkout@v4
+
+    - name: Instalar .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Compilar y publicar el .exe
+      # El comando -o ./output guarda todo el resultado final en una carpeta llamada "output"
+      run: dotnet publish DS3Go/DS3Go.csproj -c Release -r win-x64 --self-contained true -o ./output
+
+    - name: Subir el programa compilado
+      uses: actions/upload-artifact@v4
+      with:
+        name: DS3Go-Windows-App
+        path: ./output/

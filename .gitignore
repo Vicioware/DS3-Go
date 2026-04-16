@@ -1,0 +1,8 @@
+# Ignorar carpetas de compilación
+[Bb]in/
+[Oo]bj/
+
+# Ignorar configuraciones de usuario local de Visual Studio/Rider
+.vs/
+.idea/
+*.user

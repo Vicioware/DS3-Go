@@ -1,0 +1,66 @@
+<UserControl x:Class="DS3Go.Views.RemappingView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="clr-namespace:DS3Go.Models">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+            <TextBlock Text="REMAPEO DE BOTONES" FontSize="16" FontWeight="SemiBold"
+                       Foreground="{StaticResource AccentBrush}"/>
+            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center"
+                       FontSize="12" Foreground="{StaticResource TextSecondaryBrush}">
+                <Run Text="Puerto "/><Run Text="{Binding PortNumber, Mode=OneWay}"/>
+            </TextBlock>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
+                   Margin="0,0,0,12" TextWrapping="Wrap">
+            Cambia la accion que dispara cada boton fisico. El remapeo se aplica al controlador virtual (requiere ViGEmBus).
+        </TextBlock>
+
+        <Border Grid.Row="2" CornerRadius="8" Padding="8"
+                Background="{StaticResource SurfaceBrush}"
+                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="4,4" Height="32">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="140"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0" Text="{Binding PhysicalButtonName}"
+                                           VerticalAlignment="Center" FontSize="13"
+                                           Foreground="{StaticResource TextPrimaryBrush}"/>
+
+                                <TextBlock Grid.Column="1" Text="→" Margin="8,0"
+                                           VerticalAlignment="Center" FontSize="14"
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                                <ComboBox Grid.Column="2" Width="160"
+                                          ItemsSource="{Binding AvailableButtons}"
+                                          SelectedItem="{Binding VirtualButton, Mode=TwoWay}"
+                                          VerticalAlignment="Center"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <Button Grid.Row="3" Content="Restaurar Defecto" Margin="0,12,0,0"
+                Style="{StaticResource DangerButton}"
+                HorizontalAlignment="Left" Padding="16,8"
+                Command="{Binding ResetMappingsCommand}"/>
+    </Grid>
+</UserControl>
