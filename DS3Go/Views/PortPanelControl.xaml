@@ -8,15 +8,16 @@
         <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Border CornerRadius="10" Padding="14"
-            BorderThickness="2"
+    <Border CornerRadius="8" Padding="12,10"
+            BorderThickness="1"
             BorderBrush="{Binding State, Converter={StaticResource StateToBrush}}">
         <Border.Style>
             <Style TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource SurfaceBrush}"/>
+                <Setter Property="Background" Value="{StaticResource CardBrush}"/>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
                         <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -27,39 +28,43 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,4">
-                <TextBlock FontSize="15" FontWeight="SemiBold"
-                           Foreground="{StaticResource TextPrimaryBrush}">
-                    <Run Text="Puerto "/><Run Text="{Binding PortNumber, Mode=OneWay}"/>
-                </TextBlock>
-                <Ellipse Width="10" Height="10" Margin="8,0,0,0"
-                         VerticalAlignment="Center"
+            <!-- Port number + indicator -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,3">
+                <Ellipse DockPanel.Dock="Right" Width="8" Height="8"
+                         VerticalAlignment="Center" HorizontalAlignment="Right"
                          Fill="{Binding State, Converter={StaticResource StateToBrush}}"/>
-            </StackPanel>
+                <TextBlock FontSize="13" FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}">
+                    <Run Text="P"/><Run Text="{Binding PortNumber, Mode=OneWay}"/>
+                    <Run Text=" · " Foreground="{StaticResource TextSecondaryBrush}"/>
+                    <Run Text="{Binding StateDisplayName, Mode=OneWay}"
+                         FontWeight="Normal" FontSize="11"
+                         Foreground="{StaticResource TextSecondaryBrush}"/>
+                </TextBlock>
+            </DockPanel>
 
-            <TextBlock Grid.Row="1" Text="{Binding StateDisplayName}"
-                       FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                       Margin="0,0,0,4"/>
-
-            <TextBlock Grid.Row="2" FontSize="12" TextTrimming="CharacterEllipsis"
-                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,2">
+            <!-- Device name -->
+            <TextBlock Grid.Row="1" FontSize="11.5" TextTrimming="CharacterEllipsis"
+                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,1">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Text" Value="{Binding DeviceName}"/>
+                        <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding DeviceName}" Value="">
-                                <Setter Property="Text" Value="—"/>
+                                <Setter Property="Text" Value="Sin asignar"/>
                                 <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="FontStyle" Value="Italic"/>
                             </DataTrigger>
                         </Style.Triggers>
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
 
-            <TextBlock Grid.Row="3" Text="{Binding DeviceType}"
+            <!-- Device type -->
+            <TextBlock Grid.Row="2" Text="{Binding DeviceType}"
                        FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"
                        Visibility="{Binding HasDevice, Converter={StaticResource BoolToVis}}"/>
         </Grid>

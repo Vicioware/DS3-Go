@@ -2,11 +2,12 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="clr-namespace:DS3Go.Views"
-        Title="DS3 Go"
-        Width="960" Height="740"
-        MinWidth="800" MinHeight="600"
+        Title="DS3 Go — Controller Manager"
+        Width="960" Height="720"
+        MinWidth="820" MinHeight="580"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource BgBrush}">
+        Background="{StaticResource BgBrush}"
+        FontFamily="{StaticResource AppFont}">
     <Grid>
         <views:DashboardView DataContext="{Binding}"/>
     </Grid>

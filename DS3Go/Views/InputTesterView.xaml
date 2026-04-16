@@ -8,57 +8,57 @@
     </UserControl.Resources>
 
     <Grid>
-        <TextBlock Text="No hay mando conectado en este puerto"
-                   HorizontalAlignment="Center" VerticalAlignment="Center"
-                   FontSize="16" Foreground="{StaticResource ErrorBrush}"
-                   Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}"/>
+        <!-- No controller message -->
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}, ConverterParameter=Invert}">
+            <TextBlock Text="🎮" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,8"/>
+            <TextBlock Text="Ningún mando conectado en este puerto"
+                       FontSize="14" Foreground="{StaticResource TextSecondaryBrush}"
+                       HorizontalAlignment="Center"/>
+        </StackPanel>
 
-        <Viewbox Stretch="Uniform"
+        <!-- Controller visualization -->
+        <Viewbox Stretch="Uniform" MaxHeight="480"
                  Visibility="{Binding IsConnected, Converter={StaticResource BoolToVis}}">
-            <Canvas Width="900" Height="520" ClipToBounds="True">
+            <Canvas Width="860" Height="440" ClipToBounds="False">
 
-                <TextBlock Canvas.Left="350" Canvas.Top="8" Text="INPUT TESTER"
-                           FontSize="20" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                <Line X1="30" Y1="38" X2="870" Y2="38" Stroke="{StaticResource BorderBrush}" StrokeThickness="1"/>
+                <!-- ═══ Controller body silhouette ═══ -->
+                <Path Canvas.Left="80" Canvas.Top="60" Fill="#13131C" Stroke="{StaticResource BorderBrush}" StrokeThickness="1.5"
+                      Data="M 130,0 L 570,0 C 620,0 660,30 680,80 L 700,180 C 700,240 660,280 620,300 L 580,330 C 540,355 500,370 430,370 L 270,370 C 200,370 160,355 120,330 L 80,300 C 40,280 0,240 0,180 L 20,80 C 40,30 80,0 130,0 Z"/>
 
-                <!-- L2 Trigger Bar -->
+                <!-- ═══ TRIGGERS (top) ═══ -->
 
-                <Border Canvas.Left="60" Canvas.Top="60" Width="24" Height="100"
-                        CornerRadius="6" Background="{StaticResource StickBgBrush}"
-                        BorderBrush="{StaticResource StickRingBrush}" BorderThickness="1"
+                <!-- L2 -->
+                <Border Canvas.Left="130" Canvas.Top="30" Width="22" Height="80"
+                        CornerRadius="5" Background="{StaticResource StickBgBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
                         ClipToBounds="True">
                     <Grid VerticalAlignment="Bottom">
-                        <Rectangle Width="22" Height="{Binding L2BarHeight}"
-                                   RadiusX="5" RadiusY="5" Fill="{StaticResource TriggerLBrush}"/>
+                        <Rectangle Width="20" Height="{Binding L2BarHeight, FallbackValue=0}"
+                                   RadiusX="4" RadiusY="4" Fill="{StaticResource TriggerLBrush}"/>
                     </Grid>
                 </Border>
-                <TextBlock Canvas.Left="60" Canvas.Top="164" Width="24"
-                           Text="L2" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"/>
-                <TextBlock Canvas.Left="54" Canvas.Top="44" Width="36"
-                           Text="{Binding L2Percent}" FontSize="10"
-                           Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center"/>
+                <TextBlock Canvas.Left="126" Canvas.Top="112" Width="30" TextAlignment="Center"
+                           Text="L2" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
 
-                <!-- R2 Trigger Bar -->
-                <Border Canvas.Left="816" Canvas.Top="60" Width="24" Height="100"
-                        CornerRadius="6" Background="{StaticResource StickBgBrush}"
-                        BorderBrush="{StaticResource StickRingBrush}" BorderThickness="1"
+                <!-- R2 -->
+                <Border Canvas.Left="708" Canvas.Top="30" Width="22" Height="80"
+                        CornerRadius="5" Background="{StaticResource StickBgBrush}"
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
                         ClipToBounds="True">
                     <Grid VerticalAlignment="Bottom">
-                        <Rectangle Width="22" Height="{Binding R2BarHeight}"
-                                   RadiusX="5" RadiusY="5" Fill="{StaticResource TriggerRBrush}"/>
+                        <Rectangle Width="20" Height="{Binding R2BarHeight, FallbackValue=0}"
+                                   RadiusX="4" RadiusY="4" Fill="{StaticResource TriggerRBrush}"/>
                     </Grid>
                 </Border>
-                <TextBlock Canvas.Left="816" Canvas.Top="164" Width="24"
-                           Text="R2" FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"
-                           TextAlignment="Center"/>
-                <TextBlock Canvas.Left="810" Canvas.Top="44" Width="36"
-                           Text="{Binding R2Percent}" FontSize="10"
-                           Foreground="{StaticResource TextSecondaryBrush}" TextAlignment="Center"/>
+                <TextBlock Canvas.Left="704" Canvas.Top="112" Width="30" TextAlignment="Center"
+                           Text="R2" FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
 
-                <!-- L1 Bumper -->
-                <Border Canvas.Left="100" Canvas.Top="60" Width="90" Height="26" CornerRadius="8"
-                        BorderThickness="2">
+                <!-- ═══ BUMPERS ═══ -->
+
+                <!-- L1 -->
+                <Border Canvas.Left="168" Canvas.Top="72" Width="80" Height="24" CornerRadius="6"
+                        BorderThickness="1.5">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Background" Value="{StaticResource BtnOffBrush}"/>
@@ -71,12 +71,12 @@
                         </Style>
                     </Border.Style>
                     <TextBlock Text="L1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                               FontSize="11" FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}"/>
                 </Border>
 
-                <!-- R1 Bumper -->
-                <Border Canvas.Left="710" Canvas.Top="60" Width="90" Height="26" CornerRadius="8"
-                        BorderThickness="2">
+                <!-- R1 -->
+                <Border Canvas.Left="612" Canvas.Top="72" Width="80" Height="24" CornerRadius="6"
+                        BorderThickness="1.5">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Background" Value="{StaticResource BtnOffBrush}"/>
@@ -89,15 +89,75 @@
                         </Style>
                     </Border.Style>
                     <TextBlock Text="R1" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="12" Foreground="{StaticResource TextPrimaryBrush}"/>
+                               FontSize="11" FontWeight="Medium" Foreground="{StaticResource TextPrimaryBrush}"/>
                 </Border>
 
-                <!-- Left Stick -->
-                <Ellipse Canvas.Left="90" Canvas.Top="190" Width="140" Height="140"
-                         Fill="{StaticResource StickBgBrush}" Stroke="{StaticResource StickRingBrush}" StrokeThickness="2"/>
-                <Line X1="90" Y1="260" X2="230" Y2="260" Stroke="{StaticResource BorderBrush}" StrokeThickness="1"/>
-                <Line X1="160" Y1="190" X2="160" Y2="330" Stroke="{StaticResource BorderBrush}" StrokeThickness="1"/>
-                <Ellipse Width="24" Height="24" Canvas.Left="148" Canvas.Top="248">
+                <!-- ═══ D-PAD (left side, below L-stick level on a DS3) ═══ -->
+
+                <!-- D-Pad Center -->
+                <Rectangle Canvas.Left="194" Canvas.Top="225" Width="24" Height="24" RadiusX="3" RadiusY="3"
+                           Fill="{StaticResource BtnOffBrush}"/>
+                <!-- Up -->
+                <Rectangle Canvas.Left="194" Canvas.Top="199" Width="24" Height="24" RadiusX="3" RadiusY="3">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DpadUpPressed}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+                <!-- Down -->
+                <Rectangle Canvas.Left="194" Canvas.Top="251" Width="24" Height="24" RadiusX="3" RadiusY="3">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DpadDownPressed}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+                <!-- Left -->
+                <Rectangle Canvas.Left="168" Canvas.Top="225" Width="24" Height="24" RadiusX="3" RadiusY="3">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DpadLeftPressed}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+                <!-- Right -->
+                <Rectangle Canvas.Left="220" Canvas.Top="225" Width="24" Height="24" RadiusX="3" RadiusY="3">
+                    <Rectangle.Style>
+                        <Style TargetType="Rectangle">
+                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding DpadRightPressed}" Value="True">
+                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Rectangle.Style>
+                </Rectangle>
+
+                <!-- ═══ LEFT STICK (lower-left, PS3 symmetric position) ═══ -->
+                <Ellipse Canvas.Left="260" Canvas.Top="300" Width="120" Height="120"
+                         Fill="{StaticResource StickBgBrush}" Stroke="{StaticResource StickRingBrush}" StrokeThickness="1.5"/>
+                <!-- Crosshair lines -->
+                <Line X1="260" Y1="360" X2="380" Y2="360" Stroke="#1A1A28" StrokeThickness="1"/>
+                <Line X1="320" Y1="300" X2="320" Y2="420" Stroke="#1A1A28" StrokeThickness="1"/>
+                <!-- Dot -->
+                <Ellipse Width="20" Height="20" Canvas.Left="310" Canvas.Top="350">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource StickDotBrush}"/>
@@ -112,18 +172,16 @@
                         <TranslateTransform X="{Binding LeftStickOffsetX}" Y="{Binding LeftStickOffsetY}"/>
                     </Ellipse.RenderTransform>
                 </Ellipse>
-                <TextBlock Canvas.Left="130" Canvas.Top="338" Text="L" FontSize="11"
-                           Width="60" TextAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <TextBlock Canvas.Left="110" Canvas.Top="354" FontSize="10"
-                           Width="100" TextAlignment="Center"
-                           Text="{Binding LeftStickCoords}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <TextBlock Canvas.Left="295" Canvas.Top="424" Width="50" TextAlignment="Center"
+                           Text="{Binding LeftStickCoords}" FontSize="9"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
 
-                <!-- Right Stick -->
-                <Ellipse Canvas.Left="370" Canvas.Top="280" Width="140" Height="140"
-                         Fill="{StaticResource StickBgBrush}" Stroke="{StaticResource StickRingBrush}" StrokeThickness="2"/>
-                <Line X1="370" Y1="350" X2="510" Y2="350" Stroke="{StaticResource BorderBrush}" StrokeThickness="1"/>
-                <Line X1="440" Y1="280" X2="440" Y2="420" Stroke="{StaticResource BorderBrush}" StrokeThickness="1"/>
-                <Ellipse Width="24" Height="24" Canvas.Left="428" Canvas.Top="338">
+                <!-- ═══ RIGHT STICK (lower-right, PS3 symmetric position) ═══ -->
+                <Ellipse Canvas.Left="480" Canvas.Top="300" Width="120" Height="120"
+                         Fill="{StaticResource StickBgBrush}" Stroke="{StaticResource StickRingBrush}" StrokeThickness="1.5"/>
+                <Line X1="480" Y1="360" X2="600" Y2="360" Stroke="#1A1A28" StrokeThickness="1"/>
+                <Line X1="540" Y1="300" X2="540" Y2="420" Stroke="#1A1A28" StrokeThickness="1"/>
+                <Ellipse Width="20" Height="20" Canvas.Left="530" Canvas.Top="350">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource StickDotBrush}"/>
@@ -138,19 +196,19 @@
                         <TranslateTransform X="{Binding RightStickOffsetX}" Y="{Binding RightStickOffsetY}"/>
                     </Ellipse.RenderTransform>
                 </Ellipse>
-                <TextBlock Canvas.Left="410" Canvas.Top="428" Text="R" FontSize="11"
-                           Width="60" TextAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
-                <TextBlock Canvas.Left="390" Canvas.Top="444" FontSize="10"
-                           Width="100" TextAlignment="Center"
-                           Text="{Binding RightStickCoords}" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <TextBlock Canvas.Left="515" Canvas.Top="424" Width="50" TextAlignment="Center"
+                           Text="{Binding RightStickCoords}" FontSize="9"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
+
+                <!-- ═══ CENTER BUTTONS (Select, PS, Start) ═══ -->
 
                 <!-- SELECT -->
-                <Border Canvas.Left="355" Canvas.Top="130" Width="50" Height="22" CornerRadius="10"
-                        BorderThickness="2">
+                <Border Canvas.Left="355" Canvas.Top="160" Width="44" Height="20" CornerRadius="10"
+                        BorderThickness="1.5">
                     <Border.Style>
                         <Style TargetType="Border">
                             <Setter Property="Background" Value="{StaticResource BtnOffBrush}"/>
-                            <Setter Property="BorderBrush" Value="{StaticResource StickRingBrush}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding SelectPressed}" Value="True">
                                     <Setter Property="Background" Value="{StaticResource TextPrimaryBrush}"/>
@@ -159,34 +217,27 @@
                         </Style>
                     </Border.Style>
                     <TextBlock Text="SEL" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
+                               FontSize="9" FontWeight="Medium">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectPressed}" Value="True">
+                                        <Setter Property="Foreground" Value="#0E0E14"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </Border>
 
-                <!-- START -->
-                <Border Canvas.Left="495" Canvas.Top="130" Width="50" Height="22" CornerRadius="10"
-                        BorderThickness="2">
-                    <Border.Style>
-                        <Style TargetType="Border">
-                            <Setter Property="Background" Value="{StaticResource BtnOffBrush}"/>
-                            <Setter Property="BorderBrush" Value="{StaticResource StickRingBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding StartPressed}" Value="True">
-                                    <Setter Property="Background" Value="{StaticResource TextPrimaryBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Border.Style>
-                    <TextBlock Text="STA" HorizontalAlignment="Center" VerticalAlignment="Center"
-                               FontSize="10" Foreground="{StaticResource TextSecondaryBrush}"/>
-                </Border>
-
-                <!-- PS Button -->
-                <Ellipse Canvas.Left="436" Canvas.Top="160" Width="28" Height="28"
-                         StrokeThickness="2">
+                <!-- PS -->
+                <Ellipse Canvas.Left="416" Canvas.Top="190" Width="28" Height="28" StrokeThickness="1.5">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
-                            <Setter Property="Stroke" Value="{StaticResource StickRingBrush}"/>
+                            <Setter Property="Stroke" Value="{StaticResource BorderBrush}"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding PsPressed}" Value="True">
                                     <Setter Property="Fill" Value="{StaticResource AccentBrush}"/>
@@ -196,13 +247,44 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Canvas.Left="436" Canvas.Top="192" Width="28"
-                           Text="PS" FontSize="10" TextAlignment="Center"
+                <TextBlock Canvas.Left="416" Canvas.Top="220" Width="28"
+                           Text="PS" FontSize="9" TextAlignment="Center"
                            Foreground="{StaticResource TextSecondaryBrush}"/>
 
-                <!-- Action Buttons: Triangle (top), Circle (right), Cross (bottom), Square (left) -->
-                <!-- Triangle -->
-                <Ellipse Canvas.Left="722" Canvas.Top="150" Width="36" Height="36" StrokeThickness="2">
+                <!-- START -->
+                <Border Canvas.Left="461" Canvas.Top="160" Width="44" Height="20" CornerRadius="10"
+                        BorderThickness="1.5">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background" Value="{StaticResource BtnOffBrush}"/>
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StartPressed}" Value="True">
+                                    <Setter Property="Background" Value="{StaticResource TextPrimaryBrush}"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <TextBlock Text="STA" HorizontalAlignment="Center" VerticalAlignment="Center"
+                               FontSize="9" FontWeight="Medium">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+                                <Setter Property="FontFamily" Value="{StaticResource AppFont}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding StartPressed}" Value="True">
+                                        <Setter Property="Foreground" Value="#0E0E14"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Border>
+
+                <!-- ═══ ACTION BUTTONS (right side, PS3 diamond) ═══ -->
+
+                <!-- Triangle (top) -->
+                <Ellipse Canvas.Left="612" Canvas.Top="170" Width="34" Height="34" StrokeThickness="1.5">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
@@ -215,11 +297,11 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Canvas.Left="722" Canvas.Top="157" Width="36" TextAlignment="Center"
-                           Text="△" FontSize="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Canvas.Left="612" Canvas.Top="177" Width="34" TextAlignment="Center"
+                           Text="△" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
 
-                <!-- Circle -->
-                <Ellipse Canvas.Left="758" Canvas.Top="186" Width="36" Height="36" StrokeThickness="2">
+                <!-- Circle (right) -->
+                <Ellipse Canvas.Left="648" Canvas.Top="206" Width="34" Height="34" StrokeThickness="1.5">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
@@ -232,11 +314,11 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Canvas.Left="758" Canvas.Top="193" Width="36" TextAlignment="Center"
-                           Text="○" FontSize="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Canvas.Left="648" Canvas.Top="213" Width="34" TextAlignment="Center"
+                           Text="○" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
 
-                <!-- Cross -->
-                <Ellipse Canvas.Left="722" Canvas.Top="222" Width="36" Height="36" StrokeThickness="2">
+                <!-- Cross (bottom) -->
+                <Ellipse Canvas.Left="612" Canvas.Top="242" Width="34" Height="34" StrokeThickness="1.5">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
@@ -249,11 +331,11 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Canvas.Left="722" Canvas.Top="229" Width="36" TextAlignment="Center"
-                           Text="✕" FontSize="14" Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Canvas.Left="612" Canvas.Top="249" Width="34" TextAlignment="Center"
+                           Text="✕" FontSize="13" Foreground="{StaticResource TextPrimaryBrush}"/>
 
-                <!-- Square -->
-                <Ellipse Canvas.Left="686" Canvas.Top="186" Width="36" Height="36" StrokeThickness="2">
+                <!-- Square (left) -->
+                <Ellipse Canvas.Left="576" Canvas.Top="206" Width="34" Height="34" StrokeThickness="1.5">
                     <Ellipse.Style>
                         <Style TargetType="Ellipse">
                             <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
@@ -266,71 +348,16 @@
                         </Style>
                     </Ellipse.Style>
                 </Ellipse>
-                <TextBlock Canvas.Left="686" Canvas.Top="193" Width="36" TextAlignment="Center"
-                           Text="□" FontSize="16" Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Canvas.Left="576" Canvas.Top="213" Width="34" TextAlignment="Center"
+                           Text="□" FontSize="15" Foreground="{StaticResource TextPrimaryBrush}"/>
 
-                <!-- D-Pad -->
-                <!-- Center -->
-                <Rectangle Canvas.Left="146" Canvas.Top="416" Width="28" Height="28" RadiusX="4" RadiusY="4"
-                           Fill="{StaticResource BtnOffBrush}"/>
-                <!-- Up -->
-                <Rectangle Canvas.Left="146" Canvas.Top="386" Width="28" Height="28" RadiusX="4" RadiusY="4">
-                    <Rectangle.Style>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DpadUpPressed}" Value="True">
-                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Rectangle.Style>
-                </Rectangle>
-                <!-- Down -->
-                <Rectangle Canvas.Left="146" Canvas.Top="446" Width="28" Height="28" RadiusX="4" RadiusY="4">
-                    <Rectangle.Style>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DpadDownPressed}" Value="True">
-                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Rectangle.Style>
-                </Rectangle>
-                <!-- Left -->
-                <Rectangle Canvas.Left="116" Canvas.Top="416" Width="28" Height="28" RadiusX="4" RadiusY="4">
-                    <Rectangle.Style>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DpadLeftPressed}" Value="True">
-                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Rectangle.Style>
-                </Rectangle>
-                <!-- Right -->
-                <Rectangle Canvas.Left="176" Canvas.Top="416" Width="28" Height="28" RadiusX="4" RadiusY="4">
-                    <Rectangle.Style>
-                        <Style TargetType="Rectangle">
-                            <Setter Property="Fill" Value="{StaticResource BtnOffBrush}"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding DpadRightPressed}" Value="True">
-                                    <Setter Property="Fill" Value="{StaticResource DPadOnBrush}"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Rectangle.Style>
-                </Rectangle>
-                <TextBlock Canvas.Left="130" Canvas.Top="480" Text="D-Pad" FontSize="11"
-                           Width="60" TextAlignment="Center" Foreground="{StaticResource TextSecondaryBrush}"/>
-
-                <!-- Footer -->
-                <TextBlock Canvas.Left="350" Canvas.Top="498" Text="Presiona botones en el mando para probar"
-                           FontSize="11" Foreground="{StaticResource TextSecondaryBrush}"/>
+                <!-- ═══ Trigger percentages ═══ -->
+                <TextBlock Canvas.Left="120" Canvas.Top="16" Width="40" TextAlignment="Center"
+                           Text="{Binding L2Percent}" FontSize="9"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                <TextBlock Canvas.Left="700" Canvas.Top="16" Width="40" TextAlignment="Center"
+                           Text="{Binding R2Percent}" FontSize="9"
+                           Foreground="{StaticResource TextSecondaryBrush}"/>
 
             </Canvas>
         </Viewbox>

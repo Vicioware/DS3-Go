@@ -172,6 +172,29 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _virtualController.CreateVirtualController(portNumber);
     }
 
+    [RelayCommand]
+    private void SwapPorts(object? parameter)
+    {
+        if (parameter is int[] ports && ports.Length == 2)
+        {
+            _portManager.SwapPorts(ports[0], ports[1]);
+        }
+    }
+
+    [RelayCommand]
+    private void MovePortUp(int portNumber)
+    {
+        if (portNumber <= 1) return;
+        _portManager.SwapPorts(portNumber, portNumber - 1);
+    }
+
+    [RelayCommand]
+    private void MovePortDown(int portNumber)
+    {
+        if (portNumber >= 4) return;
+        _portManager.SwapPorts(portNumber, portNumber + 1);
+    }
+
     public void Dispose()
     {
         _portManager.PortStateChanged -= OnPortStateChanged;
