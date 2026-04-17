@@ -27,14 +27,12 @@ public sealed class ViGEmControllerService : IVirtualControllerService
         {
             _client = new ViGEmClient();
             IsAvailable = true;
-            _logger.LogInformation("ViGEmBus disponible. Remapeo a nivel de sistema habilitado.");
+            _logger.LogInformation("ViGEmBus disponible.");
         }
         catch (Exception ex)
         {
             IsAvailable = false;
-            _logger.LogWarning(
-                "ViGEmBus no disponible: {Msg}. Instala ViGEmBus para remapeo a nivel de sistema.",
-                ex.Message);
+            _logger.LogWarning("ViGEmBus no disponible: {Msg}.", ex.Message);
         }
     }
 
@@ -48,11 +46,11 @@ public sealed class ViGEmControllerService : IVirtualControllerService
             var controller = _client.CreateXbox360Controller();
             controller.Connect();
             _controllers[portNumber] = controller;
-            _logger.LogInformation("Controlador virtual creado para Puerto {Port}.", portNumber);
+            _logger.LogInformation("Virtual creado: Puerto {Port}.", portNumber);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al crear controlador virtual Puerto {Port}.", portNumber);
+            _logger.LogError(ex, "Error al crear virtual Puerto {Port}.", portNumber);
         }
     }
 
@@ -64,12 +62,55 @@ public sealed class ViGEmControllerService : IVirtualControllerService
         {
             controller.Disconnect();
             _controllers.Remove(portNumber);
-            _logger.LogInformation("Controlador virtual eliminado del Puerto {Port}.", portNumber);
+            _logger.LogInformation("Virtual eliminado: Puerto {Port}.", portNumber);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al eliminar controlador virtual Puerto {Port}.", portNumber);
+            _logger.LogError(ex, "Error al eliminar virtual Puerto {Port}.", portNumber);
         }
+    }
+
+    public void RebuildVirtualControllers(int[] connectedPortNumbers)
+    {
+        if (!IsAvailable || _client == null) return;
+
+        // 1. Disconnect ALL existing virtual controllers
+        foreach (var (port, controller) in _controllers.ToArray())
+        {
+            try
+            {
+                controller.Disconnect();
+                _logger.LogDebug("Virtual desconectado: Puerto {Port}.", port);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al desconectar virtual Puerto {Port}.", port);
+            }
+        }
+        _controllers.Clear();
+
+        // Brief pause so the XInput subsystem registers the disconnections
+        Thread.Sleep(50);
+
+        // 2. Reconnect in the specified order.
+        //    First port in the array gets the lowest available XInput index.
+        foreach (int port in connectedPortNumbers)
+        {
+            try
+            {
+                var controller = _client.CreateXbox360Controller();
+                controller.Connect();
+                _controllers[port] = controller;
+                _logger.LogInformation("Virtual recreado: Puerto {Port}.", port);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al recrear virtual Puerto {Port}.", port);
+            }
+        }
+
+        _logger.LogInformation("Rebuild completo: {Ports}.",
+            string.Join(", ", connectedPortNumbers.Select(p => $"P{p}")));
     }
 
     public void UpdateVirtualController(int portNumber, ControllerInput input)
@@ -110,7 +151,7 @@ public sealed class ViGEmControllerService : IVirtualControllerService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error al actualizar controlador virtual Puerto {Port}.", portNumber);
+            _logger.LogError(ex, "Error al actualizar virtual Puerto {Port}.", portNumber);
         }
     }
 
