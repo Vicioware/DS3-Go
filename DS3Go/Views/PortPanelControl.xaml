@@ -5,19 +5,21 @@
 
     <UserControl.Resources>
         <converters:PortStateToBrushConverter x:Key="StateToBrush"/>
+        <converters:PortStateToBackgroundConverter x:Key="StateToBg"/>
         <converters:BoolToVisibilityConverter x:Key="BoolToVis"/>
     </UserControl.Resources>
 
-    <Border CornerRadius="8" Padding="12,10"
-            BorderThickness="1"
-            BorderBrush="{Binding State, Converter={StaticResource StateToBrush}}">
+    <!-- All visual properties set via Style to allow triggers to override them -->
+    <Border x:Name="CardBorder" CornerRadius="8" Padding="12,10">
         <Border.Style>
             <Style TargetType="Border">
-                <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+                <Setter Property="BorderThickness" Value="1.5"/>
+                <Setter Property="BorderBrush" Value="{Binding State, Converter={StaticResource StateToBrush}}"/>
+                <Setter Property="Background" Value="{Binding State, Converter={StaticResource StateToBg}}"/>
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding IsSelected}" Value="True">
-                        <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                        <Setter Property="BorderBrush" Value="White"/>
+                        <Setter Property="BorderThickness" Value="2"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -32,9 +34,8 @@
 
             <!-- Port number + indicator + forget button -->
             <DockPanel Grid.Row="0" Margin="0,0,0,3">
-                <!-- Forget button (top-right corner) -->
-                <Button DockPanel.Dock="Right" Content="✕" FontSize="10"
-                        ToolTip="Olvidar mando"
+                <!-- Forget button -->
+                <Button DockPanel.Dock="Right" ToolTip="Olvidar mando"
                         Visibility="{Binding HasDevice, Converter={StaticResource BoolToVis}}"
                         Command="{Binding DataContext.ForgetDeviceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                         CommandParameter="{Binding PortNumber}">
@@ -43,20 +44,21 @@
                             <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
                             <Setter Property="BorderThickness" Value="0"/>
-                            <Setter Property="Padding" Value="4,1"/>
                             <Setter Property="Cursor" Value="Hand"/>
                             <Setter Property="VerticalAlignment" Value="Top"/>
-                            <Setter Property="Margin" Value="4,-2,-4,0"/>
+                            <Setter Property="Margin" Value="4,-4,-4,-2"/>
                             <Setter Property="Template">
                                 <Setter.Value>
                                     <ControlTemplate TargetType="Button">
                                         <Border x:Name="bg" Background="Transparent"
-                                                CornerRadius="3" Padding="{TemplateBinding Padding}">
-                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                CornerRadius="4" Padding="6,3" MinWidth="24" MinHeight="20">
+                                            <TextBlock Text="✕" FontSize="13" FontWeight="Medium"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                       Foreground="{TemplateBinding Foreground}"/>
                                         </Border>
                                         <ControlTemplate.Triggers>
                                             <Trigger Property="IsMouseOver" Value="True">
-                                                <Setter TargetName="bg" Property="Background" Value="#30151A"/>
+                                                <Setter TargetName="bg" Property="Background" Value="#40181C"/>
                                                 <Setter Property="Foreground" Value="{StaticResource ErrorBrush}"/>
                                             </Trigger>
                                         </ControlTemplate.Triggers>
@@ -68,7 +70,7 @@
                 </Button>
 
                 <Ellipse DockPanel.Dock="Right" Width="8" Height="8"
-                         VerticalAlignment="Center" Margin="0,0,4,0"
+                         VerticalAlignment="Center" Margin="0,0,6,0"
                          Fill="{Binding State, Converter={StaticResource StateToBrush}}"/>
 
                 <TextBlock FontSize="13" FontWeight="SemiBold"

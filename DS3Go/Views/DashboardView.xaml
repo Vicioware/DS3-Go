@@ -44,13 +44,12 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type vm:PortViewModel}">
-                    <views:PortPanelControl Margin="4" Cursor="Hand">
-                        <views:PortPanelControl.InputBindings>
-                            <MouseBinding MouseAction="LeftClick"
-                                          Command="{Binding DataContext.SelectPortCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
-                                          CommandParameter="{Binding}"/>
-                        </views:PortPanelControl.InputBindings>
-                    </views:PortPanelControl>
+                    <views:PortPanelControl Margin="4" Cursor="Hand"
+                                            AllowDrop="True"
+                                            PreviewMouseLeftButtonDown="PortCard_PreviewMouseLeftButtonDown"
+                                            PreviewMouseMove="PortCard_PreviewMouseMove"
+                                            DragOver="PortCard_DragOver"
+                                            Drop="PortCard_Drop"/>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>

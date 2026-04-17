@@ -20,7 +20,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ILogger<MainViewModel> _logger;
     private readonly Dispatcher _dispatcher;
 
-    // Track last input state to detect rising edges for remapping capture
+    // Track previous button states to detect rising edges for remapping
     private readonly Dictionary<DS3Button, bool> _prevButtonState = new();
 
     public ObservableCollection<PortViewModel> Ports { get; } = new();
@@ -140,12 +140,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
+    /// <summary>
+    /// Resolves which XInput index to use for the currently selected port.
+    /// Uses the stored XInputIndex from the port slot, falling back to
+    /// trying all 4 XInput slots for a connected controller.
+    /// </summary>
+    private int GetActiveXInputIndex()
+    {
+        if (SelectedPort == null) return -1;
+        var slot = _portManager.Ports.FirstOrDefault(s => s.PortNumber == SelectedPort.PortNumber);
+        if (slot == null) return -1;
+
+        // Use stored XInputIndex
+        if (slot.XInputIndex >= 0 && slot.XInputIndex < 4)
+            return slot.XInputIndex;
+
+        // Fallback: try all indices
+        for (int i = 0; i < 4; i++)
+        {
+            if (_inputReader.IsControllerConnected(i))
+                return i;
+        }
+
+        return 0;
+    }
+
     private void OnInputUpdated(int xInputIndex, ControllerInput rawInput)
     {
         if (SelectedPort == null || !rawInput.IsConnected) return;
-        if (xInputIndex != SelectedPort.PortNumber - 1) return;
 
-        // Check for button press for remapping capture
+        // Match by XInputIndex stored in the port slot
+        var activeIndex = GetActiveXInputIndex();
+        if (xInputIndex != activeIndex) return;
+
+        // Detect rising edge for remapping capture
         if (Remapping.IsListening)
         {
             foreach (DS3Button btn in Enum.GetValues<DS3Button>())
@@ -155,16 +183,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
                 if (pressed && !wasPrev)
                 {
+                    // Capture on UI thread
+                    var capturedBtn = btn;
                     _dispatcher.BeginInvoke(() =>
                     {
-                        Remapping.OnButtonPressedWhileListening(btn);
+                        Remapping.OnButtonPressedWhileListening(capturedBtn);
                     });
                     break;
                 }
             }
         }
 
-        // Update previous state
+        // Update previous state for next poll cycle
         foreach (DS3Button btn in Enum.GetValues<DS3Button>())
             _prevButtonState[btn] = rawInput.IsButtonPressed(btn);
 
@@ -199,6 +229,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (!_virtualController.IsAvailable) return;
         _virtualController.CreateVirtualController(portNumber);
+    }
+
+    [RelayCommand]
+    private void SwapPorts(object? parameter)
+    {
+        if (parameter is int[] ports && ports.Length == 2)
+        {
+            _portManager.SwapPorts(ports[0], ports[1]);
+        }
     }
 
     [RelayCommand]
