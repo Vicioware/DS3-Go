@@ -12,9 +12,9 @@ public sealed class PortManager : IPortManager
     private readonly ILogger<PortManager> _logger;
     private readonly object _lock = new();
 
-    // Track VID:PID pairs that have already been assigned in this session
-    // to prevent double-assignment from multiple USB interfaces.
-    private readonly HashSet<string> _assignedVidPids = new(StringComparer.OrdinalIgnoreCase);
+    // Track which XInput indices are already claimed by a port to prevent
+    // SCP/DsHidMini double-detection (native DS3 + virtual Xbox share same slot).
+    private readonly HashSet<int> _claimedXInputIndices = new();
 
     public IReadOnlyList<PortSlot> Ports => _ports;
     public event Action<int>? PortStateChanged;
@@ -37,7 +37,22 @@ public sealed class PortManager : IPortManager
     {
         lock (_lock)
         {
-            var vidPidKey = $"{device.Vid}:{device.Pid}".ToUpperInvariant();
+            // Determine this device's XInput index FIRST
+            int xIndex = FindNextFreeXInputIndex();
+
+            // If no XInput slot responds, this device isn't usable for games — skip it
+            if (xIndex < 0)
+            {
+                _logger.LogDebug("Dispositivo {Name} ignorado: sin slot XInput disponible.", device.Name);
+                return;
+            }
+
+            // Dedup: if this XInput index is already claimed by another port, skip
+            if (_claimedXInputIndices.Contains(xIndex))
+            {
+                _logger.LogDebug("XInput[{Index}] ya asignado, ignorando {Name}.", xIndex, device.Name);
+                return;
+            }
 
             // 1. Exact path match — reconnect to same port
             var existingPort = _ports.FirstOrDefault(
@@ -48,30 +63,14 @@ public sealed class PortManager : IPortManager
             {
                 existingPort.State = PortState.Connected;
                 existingPort.Controller = device;
-                existingPort.XInputIndex = FindXInputIndex();
-                _assignedVidPids.Add(vidPidKey);
-                _logger.LogInformation("Mando reconocido en Puerto {Port}.", existingPort.PortNumber);
+                existingPort.XInputIndex = xIndex;
+                _claimedXInputIndices.Add(xIndex);
+                _logger.LogInformation("Mando reconocido en Puerto {Port} (XInput {XI}).", existingPort.PortNumber, xIndex);
                 PortStateChanged?.Invoke(existingPort.PortNumber);
                 return;
             }
 
-            // 2. Dedup: same VID/PID already connected or being processed
-            if (_assignedVidPids.Contains(vidPidKey))
-            {
-                var connPort = _ports.FirstOrDefault(
-                    p => p.State == PortState.Connected &&
-                         p.Controller != null &&
-                         $"{p.Controller.Vid}:{p.Controller.Pid}".Equals(vidPidKey, StringComparison.OrdinalIgnoreCase));
-
-                if (connPort != null)
-                {
-                    _logger.LogDebug("Duplicado ignorado: {VidPid} ya está en Puerto {Port}.",
-                        vidPidKey, connPort.PortNumber);
-                    return;
-                }
-            }
-
-            // 3. VID/PID match on an Assigned (remembered) port
+            // 2. VID/PID match on an Assigned (remembered) port
             var deviceVidPid = ExtractVidPid(device.DeviceInstancePath);
             if (!string.IsNullOrEmpty(deviceVidPid))
             {
@@ -85,25 +84,25 @@ public sealed class PortManager : IPortManager
                     assignedMatch.State = PortState.Connected;
                     assignedMatch.AssignedDevicePath = device.DeviceInstancePath;
                     assignedMatch.Controller = device;
-                    assignedMatch.XInputIndex = FindXInputIndex();
-                    _assignedVidPids.Add(vidPidKey);
-                    _logger.LogInformation("Mando VID/PID reconocido en Puerto {Port}.", assignedMatch.PortNumber);
+                    assignedMatch.XInputIndex = xIndex;
+                    _claimedXInputIndices.Add(xIndex);
+                    _logger.LogInformation("Mando VID/PID reconocido en Puerto {Port} (XInput {XI}).", assignedMatch.PortNumber, xIndex);
                     PortStateChanged?.Invoke(assignedMatch.PortNumber);
                     SaveState();
                     return;
                 }
             }
 
-            // 4. Assign to first empty port
+            // 3. Assign to first empty port
             var emptyPort = _ports.FirstOrDefault(p => p.State == PortState.Empty);
             if (emptyPort != null)
             {
                 emptyPort.State = PortState.Connected;
                 emptyPort.AssignedDevicePath = device.DeviceInstancePath;
                 emptyPort.Controller = device;
-                emptyPort.XInputIndex = FindXInputIndex();
-                _assignedVidPids.Add(vidPidKey);
-                _logger.LogInformation("Mando asignado a Puerto {Port}.", emptyPort.PortNumber);
+                emptyPort.XInputIndex = xIndex;
+                _claimedXInputIndices.Add(xIndex);
+                _logger.LogInformation("Mando asignado a Puerto {Port} (XInput {XI}).", emptyPort.PortNumber, xIndex);
                 PortStateChanged?.Invoke(emptyPort.PortNumber);
                 SaveState();
                 return;
@@ -135,10 +134,7 @@ public sealed class PortManager : IPortManager
 
             if (port != null && port.State == PortState.Connected)
             {
-                // Remove from dedup set
-                if (port.Controller != null)
-                    _assignedVidPids.Remove($"{port.Controller.Vid}:{port.Controller.Pid}".ToUpperInvariant());
-
+                _claimedXInputIndices.Remove(port.XInputIndex);
                 port.State = PortState.Assigned;
                 port.Controller = null;
                 _logger.LogInformation("Puerto {Port}: Desconectado -> Asignado.", port.PortNumber);
@@ -154,8 +150,7 @@ public sealed class PortManager : IPortManager
             var port = _ports.FirstOrDefault(p => p.PortNumber == portNumber);
             if (port == null || port.State == PortState.Empty) return;
 
-            if (port.Controller != null)
-                _assignedVidPids.Remove($"{port.Controller.Vid}:{port.Controller.Pid}".ToUpperInvariant());
+            _claimedXInputIndices.Remove(port.XInputIndex);
 
             port.State = PortState.Empty;
             port.AssignedDevicePath = null;
@@ -223,17 +218,21 @@ public sealed class PortManager : IPortManager
     }
 
     /// <summary>
-    /// Returns the first XInput index that reports a connected gamepad.
+    /// Returns the next XInput index that is connected but NOT already claimed by another port.
+    /// Returns -1 if no usable slot found.
     /// </summary>
-    private static int FindXInputIndex()
+    private int FindNextFreeXInputIndex()
     {
         var state = new Interop.XInputNative.XINPUT_STATE();
         for (int i = 0; i < MaxPorts; i++)
         {
+            if (_claimedXInputIndices.Contains(i))
+                continue;
+
             if (Interop.XInputNative.XInputGetState((uint)i, ref state) == Interop.XInputNative.ERROR_SUCCESS)
                 return i;
         }
-        return 0; // Default to 0 instead of -1
+        return -1;
     }
 
     private static string ExtractVidPid(string path)

@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -20,7 +19,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly ILogger<MainViewModel> _logger;
     private readonly Dispatcher _dispatcher;
 
-    // Track previous button states to detect rising edges for remapping
+    // Track previous button states per XInput index for rising-edge detection
     private readonly Dictionary<DS3Button, bool> _prevButtonState = new();
 
     public ObservableCollection<PortViewModel> Ports { get; } = new();
@@ -140,74 +139,56 @@ public partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
-    /// <summary>
-    /// Resolves which XInput index to use for the currently selected port.
-    /// Uses the stored XInputIndex from the port slot, falling back to
-    /// trying all 4 XInput slots for a connected controller.
-    /// </summary>
-    private int GetActiveXInputIndex()
-    {
-        if (SelectedPort == null) return -1;
-        var slot = _portManager.Ports.FirstOrDefault(s => s.PortNumber == SelectedPort.PortNumber);
-        if (slot == null) return -1;
-
-        // Use stored XInputIndex
-        if (slot.XInputIndex >= 0 && slot.XInputIndex < 4)
-            return slot.XInputIndex;
-
-        // Fallback: try all indices
-        for (int i = 0; i < 4; i++)
-        {
-            if (_inputReader.IsControllerConnected(i))
-                return i;
-        }
-
-        return 0;
-    }
-
     private void OnInputUpdated(int xInputIndex, ControllerInput rawInput)
     {
-        if (SelectedPort == null || !rawInput.IsConnected) return;
+        if (!rawInput.IsConnected) return;
 
-        // Match by XInputIndex stored in the port slot
-        var activeIndex = GetActiveXInputIndex();
-        if (xInputIndex != activeIndex) return;
+        // Find which port owns this XInput index
+        var ownerSlot = _portManager.Ports.FirstOrDefault(
+            s => s.State == PortState.Connected && s.XInputIndex == xInputIndex);
 
-        // Detect rising edge for remapping capture
-        if (Remapping.IsListening)
-        {
-            foreach (DS3Button btn in Enum.GetValues<DS3Button>())
-            {
-                bool pressed = rawInput.IsButtonPressed(btn);
-                bool wasPrev = _prevButtonState.GetValueOrDefault(btn, false);
+        if (ownerSlot == null) return;
 
-                if (pressed && !wasPrev)
-                {
-                    // Capture on UI thread
-                    var capturedBtn = btn;
-                    _dispatcher.BeginInvoke(() =>
-                    {
-                        Remapping.OnButtonPressedWhileListening(capturedBtn);
-                    });
-                    break;
-                }
-            }
-        }
+        int portNumber = ownerSlot.PortNumber;
+        var remapped = _remappingEngine.ApplyRemapping(portNumber, rawInput);
 
-        // Update previous state for next poll cycle
-        foreach (DS3Button btn in Enum.GetValues<DS3Button>())
-            _prevButtonState[btn] = rawInput.IsButtonPressed(btn);
-
-        var remapped = _remappingEngine.ApplyRemapping(SelectedPort.PortNumber, rawInput);
-
-        _dispatcher.BeginInvoke(() =>
-        {
-            InputTester.UpdateInput(remapped);
-        });
-
+        // Route to virtual controller for this port (this is what games see)
         if (_virtualController.IsAvailable)
         {
-            _virtualController.UpdateVirtualController(SelectedPort.PortNumber, remapped);
+            _virtualController.UpdateVirtualController(portNumber, remapped);
+        }
+
+        // Only update UI (input tester + remapping capture) for the selected port
+        if (SelectedPort != null && portNumber == SelectedPort.PortNumber)
+        {
+            // Rising-edge detection for remapping capture
+            if (Remapping.IsListening)
+            {
+                foreach (DS3Button btn in Enum.GetValues<DS3Button>())
+                {
+                    bool pressed = rawInput.IsButtonPressed(btn);
+                    bool wasPrev = _prevButtonState.GetValueOrDefault(btn, false);
+
+                    if (pressed && !wasPrev)
+                    {
+                        var capturedBtn = btn;
+                        _dispatcher.BeginInvoke(() =>
+                        {
+                            Remapping.OnButtonPressedWhileListening(capturedBtn);
+                        });
+                        break;
+                    }
+                }
+            }
+
+            // Update prev state
+            foreach (DS3Button btn in Enum.GetValues<DS3Button>())
+                _prevButtonState[btn] = rawInput.IsButtonPressed(btn);
+
+            _dispatcher.BeginInvoke(() =>
+            {
+                InputTester.UpdateInput(remapped);
+            });
         }
     }
 
