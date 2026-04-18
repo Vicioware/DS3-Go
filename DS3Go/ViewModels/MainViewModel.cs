@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DS3Go.Models;
+using DS3Go.Services;
 using DS3Go.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -109,6 +110,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _dispatcher.Invoke(() =>
         {
+            // If using HID reader, rescan so the new device is picked up
+            if (_inputReader is HidInputReader hidReader)
+            {
+                hidReader.ScanDevices();
+            }
+
             _portManager.OnControllerConnected(device);
 
             // Auto-create ViGEm virtual controller for this port
