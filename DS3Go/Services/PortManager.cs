@@ -9,22 +9,17 @@ public sealed class PortManager : IPortManager
     private const int MaxPorts = 4;
     private readonly PortSlot[] _ports;
     private readonly IPersistenceService _persistence;
-    private readonly IInputReader _inputReader;
     private readonly ILogger<PortManager> _logger;
     private readonly object _lock = new();
 
-    private readonly HashSet<int> _claimedReaderIndices = new();
+    private readonly HashSet<int> _claimedXInputIndices = new();
 
     public IReadOnlyList<PortSlot> Ports => _ports;
     public event Action<int>? PortStateChanged;
 
-    public PortManager(
-        IPersistenceService persistence,
-        IInputReader inputReader,
-        ILogger<PortManager> logger)
+    public PortManager(IPersistenceService persistence, ILogger<PortManager> logger)
     {
         _persistence = persistence;
-        _inputReader = inputReader;
         _logger = logger;
 
         _ports = new PortSlot[MaxPorts];
@@ -38,17 +33,17 @@ public sealed class PortManager : IPortManager
     {
         lock (_lock)
         {
-            int readerIndex = FindNextFreeReaderIndex();
+            int xIndex = FindNextFreeXInputIndex();
 
-            if (readerIndex < 0)
+            if (xIndex < 0)
             {
-                _logger.LogDebug("Dispositivo {Name} ignorado: sin slot de lectura disponible.", device.Name);
+                _logger.LogDebug("Dispositivo {Name} ignorado: sin slot XInput.", device.Name);
                 return;
             }
 
-            if (_claimedReaderIndices.Contains(readerIndex))
+            if (_claimedXInputIndices.Contains(xIndex))
             {
-                _logger.LogDebug("ReaderIndex[{Index}] ya asignado, ignorando {Name}.", readerIndex, device.Name);
+                _logger.LogDebug("XInput[{Index}] ya asignado, ignorando {Name}.", xIndex, device.Name);
                 return;
             }
 
@@ -61,10 +56,10 @@ public sealed class PortManager : IPortManager
             {
                 existingPort.State = PortState.Connected;
                 existingPort.Controller = device;
-                existingPort.XInputIndex = readerIndex;
-                _claimedReaderIndices.Add(readerIndex);
-                _logger.LogInformation("Mando reconocido en Puerto {Port} (Reader {RI}).",
-                    existingPort.PortNumber, readerIndex);
+                existingPort.XInputIndex = xIndex;
+                _claimedXInputIndices.Add(xIndex);
+                _logger.LogInformation("Reconocido en Puerto {Port} (XInput {XI}).",
+                    existingPort.PortNumber, xIndex);
                 PortStateChanged?.Invoke(existingPort.PortNumber);
                 return;
             }
@@ -84,10 +79,10 @@ public sealed class PortManager : IPortManager
                     assignedMatch.State = PortState.Connected;
                     assignedMatch.AssignedDevicePath = device.DeviceInstancePath;
                     assignedMatch.Controller = device;
-                    assignedMatch.XInputIndex = readerIndex;
-                    _claimedReaderIndices.Add(readerIndex);
-                    _logger.LogInformation("VID/PID reconocido en Puerto {Port} (Reader {RI}).",
-                        assignedMatch.PortNumber, readerIndex);
+                    assignedMatch.XInputIndex = xIndex;
+                    _claimedXInputIndices.Add(xIndex);
+                    _logger.LogInformation("VID/PID reconocido en Puerto {Port} (XInput {XI}).",
+                        assignedMatch.PortNumber, xIndex);
                     PortStateChanged?.Invoke(assignedMatch.PortNumber);
                     SaveState();
                     return;
@@ -101,10 +96,10 @@ public sealed class PortManager : IPortManager
                 emptyPort.State = PortState.Connected;
                 emptyPort.AssignedDevicePath = device.DeviceInstancePath;
                 emptyPort.Controller = device;
-                emptyPort.XInputIndex = readerIndex;
-                _claimedReaderIndices.Add(readerIndex);
-                _logger.LogInformation("Asignado a Puerto {Port} (Reader {RI}).",
-                    emptyPort.PortNumber, readerIndex);
+                emptyPort.XInputIndex = xIndex;
+                _claimedXInputIndices.Add(xIndex);
+                _logger.LogInformation("Asignado a Puerto {Port} (XInput {XI}).",
+                    emptyPort.PortNumber, xIndex);
                 PortStateChanged?.Invoke(emptyPort.PortNumber);
                 SaveState();
                 return;
@@ -137,7 +132,7 @@ public sealed class PortManager : IPortManager
 
             if (port != null && port.State == PortState.Connected)
             {
-                _claimedReaderIndices.Remove(port.XInputIndex);
+                _claimedXInputIndices.Remove(port.XInputIndex);
                 port.State = PortState.Assigned;
                 port.Controller = null;
                 _logger.LogInformation("Puerto {Port}: Desconectado -> Asignado.", port.PortNumber);
@@ -153,7 +148,7 @@ public sealed class PortManager : IPortManager
             var port = _ports.FirstOrDefault(p => p.PortNumber == portNumber);
             if (port == null || port.State == PortState.Empty) return;
 
-            _claimedReaderIndices.Remove(port.XInputIndex);
+            _claimedXInputIndices.Remove(port.XInputIndex);
             port.State = PortState.Empty;
             port.AssignedDevicePath = null;
             port.Controller = null;
@@ -211,17 +206,16 @@ public sealed class PortManager : IPortManager
     }
 
     /// <summary>
-    /// Finds the next reader index (0-3) that is connected but not claimed by a port.
-    /// Uses IInputReader.IsControllerConnected instead of probing XInput directly.
+    /// Finds the next XInput index (0-3) that is connected but not claimed.
     /// </summary>
-    private int FindNextFreeReaderIndex()
+    private int FindNextFreeXInputIndex()
     {
+        var state = new Interop.XInputNative.XINPUT_STATE();
         for (int i = 0; i < MaxPorts; i++)
         {
-            if (_claimedReaderIndices.Contains(i))
+            if (_claimedXInputIndices.Contains(i))
                 continue;
-
-            if (_inputReader.IsControllerConnected(i))
+            if (Interop.XInputNative.XInputGetState((uint)i, ref state) == Interop.XInputNative.ERROR_SUCCESS)
                 return i;
         }
         return -1;

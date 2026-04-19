@@ -4,7 +4,6 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DS3Go.Models;
-using DS3Go.Services;
 using DS3Go.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -110,20 +109,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         _dispatcher.Invoke(() =>
         {
-            // If using HID reader, rescan so the new device is picked up
-            if (_inputReader is HidInputReader hidReader)
-            {
-                hidReader.ScanDevices();
-            }
-
             _portManager.OnControllerConnected(device);
-
-            // Auto-create ViGEm virtual controller for this port
-            if (_virtualController.IsAvailable)
-            {
-                RebuildAllVirtualControllers();
-            }
-
             StatusText = $"Conectado: {device.Name}";
         });
     }
@@ -133,13 +119,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _dispatcher.Invoke(() =>
         {
             _portManager.OnControllerDisconnected(devicePath);
-
-            // Rebuild virtual controllers (removes the disconnected one)
-            if (_virtualController.IsAvailable)
-            {
-                RebuildAllVirtualControllers();
-            }
-
             StatusText = "Mando desconectado.";
         });
     }
@@ -157,31 +136,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
         });
     }
 
-    /// <summary>
-    /// Destroys all ViGEm virtual controllers and recreates them in port order.
-    /// Port 1 gets the lowest XInput index, Port 2 gets the next, etc.
-    /// This is how port assignment translates to actual player order in games.
-    /// </summary>
-    private void RebuildAllVirtualControllers()
-    {
-        var connectedPorts = _portManager.Ports
-            .Where(s => s.State == PortState.Connected)
-            .OrderBy(s => s.PortNumber)
-            .Select(s => s.PortNumber)
-            .ToArray();
-
-        if (connectedPorts.Length == 0) return;
-
-        _virtualController.RebuildVirtualControllers(connectedPorts);
-        _logger.LogInformation("Virtual controllers reconstruidos: {Ports}",
-            string.Join(", ", connectedPorts.Select(p => $"P{p}")));
-    }
-
     private void OnInputUpdated(int xInputIndex, ControllerInput rawInput)
     {
         if (!rawInput.IsConnected) return;
 
-        // Find which port owns this XInput index
+        // Find which port owns this reader index
         var ownerSlot = _portManager.Ports.FirstOrDefault(
             s => s.State == PortState.Connected && s.XInputIndex == xInputIndex);
 
@@ -189,12 +148,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         int portNumber = ownerSlot.PortNumber;
         var remapped = _remappingEngine.ApplyRemapping(portNumber, rawInput);
-
-        // Route to this port's virtual controller
-        if (_virtualController.IsAvailable)
-        {
-            _virtualController.UpdateVirtualController(portNumber, remapped);
-        }
 
         // UI updates only for selected port
         if (SelectedPort != null && portNumber == SelectedPort.PortNumber)
@@ -239,14 +192,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void ForgetDevice(int portNumber)
     {
         _portManager.ForgetDevice(portNumber);
-        _virtualController.RemoveVirtualController(portNumber);
-    }
-
-    [RelayCommand]
-    private void ToggleVirtualController(int portNumber)
-    {
-        if (!_virtualController.IsAvailable) return;
-        _virtualController.CreateVirtualController(portNumber);
     }
 
     [RelayCommand]
@@ -255,13 +200,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (parameter is int[] ports && ports.Length == 2)
         {
             _portManager.SwapPorts(ports[0], ports[1]);
-
-            // Rebuild virtual controllers in new port order
-            // so that XInput indices match the new port assignments
-            if (_virtualController.IsAvailable)
-            {
-                RebuildAllVirtualControllers();
-            }
         }
     }
 
@@ -270,9 +208,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (portNumber <= 1) return;
         _portManager.SwapPorts(portNumber, portNumber - 1);
-
-        if (_virtualController.IsAvailable)
-            RebuildAllVirtualControllers();
     }
 
     [RelayCommand]
@@ -280,9 +215,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         if (portNumber >= 4) return;
         _portManager.SwapPorts(portNumber, portNumber + 1);
-
-        if (_virtualController.IsAvailable)
-            RebuildAllVirtualControllers();
     }
 
     public void Dispose()

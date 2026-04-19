@@ -6,7 +6,6 @@ using Serilog;
 using DS3Go.Services;
 using DS3Go.Services.Interfaces;
 using DS3Go.ViewModels;
-using HidSharp;
 
 namespace DS3Go;
 
@@ -47,36 +46,8 @@ public partial class App : Application
 
         services.AddSingleton<IPersistenceService, JsonPersistenceService>();
         services.AddSingleton<IRemappingEngine, RemappingEngine>();
+        services.AddSingleton<IInputReader, XInputReader>();
         services.AddSingleton<IVirtualControllerService, ViGEmControllerService>();
-
-        // Input reader: try HID (DsHidMini SXS) first, fall back to XInput (SCP/XInput mode)
-        services.AddSingleton<IInputReader>(sp =>
-        {
-            var logger = sp.GetRequiredService<ILoggerFactory>();
-
-            // Check if any DS3 HID device is accessible
-            bool hasHidDs3 = false;
-            try
-            {
-                hasHidDs3 = DeviceList.Local
-                    .GetHidDevices(vendorID: 0x054C, productID: 0x0268)
-                    .Any();
-            }
-            catch { }
-
-            if (hasHidDs3)
-            {
-                Log.Logger.Information(
-                    "DS3 HID detectado → usando lectura HID directa (DsHidMini SXS).");
-                return new HidInputReader(
-                    logger.CreateLogger<HidInputReader>());
-            }
-
-            Log.Logger.Information(
-                "Sin DS3 HID → usando lectura XInput (SCP/DsHidMini XInput mode).");
-            return new XInputReader(
-                logger.CreateLogger<XInputReader>());
-        });
 
         services.AddSingleton<IDeviceIdentifier>(sp =>
         {
